@@ -20,6 +20,7 @@ namespace MultiplayerCore::UI{
     int CenterScreenLoading::playersReady;
 
     void CenterScreenLoading::Awake() {
+        // The issue with assigning in Awake is that you could theoretically still have multiple instances on accident. Be careful with your usage.
         getLogger().debug("CenterScreenLoading::Awake");
         instance = this;
         screenController = get_gameObject()->GetComponentInParent<CenterStageScreenController*>();

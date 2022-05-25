@@ -1,4 +1,6 @@
 #pragma once
+// You can remove all but three of the following includes, like literally completely remove them and everything would be fine.
+// These includes just make your compile times far slower than they need to be
 #include "GlobalFields.hpp"
 #include "beatsaber-hook/shared/utils/hooking.hpp"
 #include "GlobalNamespace/NetworkPlayerEntitlementChecker.hpp"

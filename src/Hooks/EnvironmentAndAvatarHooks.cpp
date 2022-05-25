@@ -33,6 +33,9 @@ using namespace System::Collections::Generic;
 namespace MultiplayerCore {
 
 #pragma region Fields
+    // Every time I see pointer free fields, I get nervous because handling soft restarts requires more complex logic.
+    // In this case, it seems these are simply fields solely for the reason of being passed as parameters to HandleLobbyEnvironmentLoaded
+    // which seems like a very odd design decision to me.
     ILobbyStateDataModel* _lobbyStateDataModel;
     MenuEnvironmentManager* _menuEnvironmentManager;
     MultiplayerLobbyAvatarPlaceManager* _placeManager;

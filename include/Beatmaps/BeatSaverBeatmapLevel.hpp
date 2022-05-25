@@ -13,6 +13,8 @@ DECLARE_CLASS_CUSTOM_DLL(MultiplayerCore::Beatmaps, BeatSaverBeatmapLevel, Abstr
 	DECLARE_INSTANCE_FIELD(StringW, levelHash);
 
 	// Getter overrides
+	// Note that not a single one of these overrides needs to use MpBeatmapLevel, they can just use the interface.
+	// They will still override the interface methods, basically, the functionality is identical but you remove a bunch of garbage.
 	DECLARE_OVERRIDE_METHOD(StringW, get_levelHash, il2cpp_utils::il2cpp_type_check::MetadataGetter<&Abstractions::MpBeatmapLevel::get_levelHash>::get());
 
 	DECLARE_OVERRIDE_METHOD(StringW, get_levelID, il2cpp_utils::il2cpp_type_check::MetadataGetter<&Abstractions::MpBeatmapLevel::get_levelID>::get());
@@ -29,7 +31,10 @@ DECLARE_CLASS_CUSTOM_DLL(MultiplayerCore::Beatmaps, BeatSaverBeatmapLevel, Abstr
 	public:
 		template <class TPreview>
 		static LocalBeatmapLevel* CS_Ctor(StringW hash, TPreview* preview) {
+			// This should realistically be a TPreview, not a TPreview*, and then it should ask if the type is convertible to IPreviewBeatmapLevel*,
+			// which also allows for user defined conversion operators
 			static_assert(std::is_convertible_v<std::remove_pointer_t<TPreview>, GlobalNamespace::IPreviewBeatmapLevel>, "Make sure your Type Implements and is Convertible to IPreviewBeatmapLevel*");
+			// If you have checked to see that your type IS convertible, you should use static_cast here instead.
 			return BeatSaverBeatmapLevel::New_ctor(hash, reinterpret_cast<GlobalNamespace::IPreviewBeatmapLevel*>(preview));
 		}
 

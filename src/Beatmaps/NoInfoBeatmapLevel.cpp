@@ -25,6 +25,7 @@ namespace MultiplayerCore::Beatmaps {
 	}
 
 	StringW NoInfoBeatmapLevel::get_songName() {
+		// Note that this is different than a StringW(). I imagine that is what you want, but it is worth noting.
 		return StringW("");
 	}
 

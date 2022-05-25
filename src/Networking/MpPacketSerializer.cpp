@@ -19,6 +19,12 @@ namespace MultiplayerCore::Networking {
 		}
 		catch (il2cpp_utils::RunMethodException const& e) {
 			getLogger().error("REPORT TO ENDER in MpPacketSerializer: %s", e.what());
+			// cmon, all you had to do here was e.log_backtrace()!
+			// you can also od the actual backtrace to get a better idea, sure.
+			// Also worth noting that the other exceptions won't happen unless RegisterSerializer is:
+			// 1. virtual
+			// 2. A custom type overrides it and does some strange things that result in exceptions not being bubbled correctly
+			// so basically, you can assume only this exception case may happen.
 			getLogger().Backtrace(20);
 		}
 		catch (const std::exception& e) {
@@ -33,6 +39,7 @@ namespace MultiplayerCore::Networking {
 
 	void MpPacketSerializer::Deconstruct() {
 		getLogger().debug("Deconstructing MpPacketSerializer");
+		// If packetHandlers was a collection of smart pointers instead, you wouldn't need this.
 		for (auto it = packetHandlers.begin(); it != packetHandlers.end(); it++) {
 			delete it->second;
 		}
@@ -40,6 +47,8 @@ namespace MultiplayerCore::Networking {
 		getLogger().debug("Unregistering MpPacketSerializer");
 		_sessionManager->UnregisterSerializer((GlobalNamespace::MultiplayerSessionManager_MessageType)MpPacketSerializer::Packet_ID, reinterpret_cast<GlobalNamespace::INetworkPacketSubSerializer_1<GlobalNamespace::IConnectedPlayer*>*>(this));
 		_sessionManager = nullptr;
+		// You should also call the dtor here, otherwise you will leak memory from your callback dictionary.
+		MpPacketSerializer::~MpPacketSerializer();
 	}
 
 	void MpPacketSerializer::Serialize(LiteNetLib::Utils::NetDataWriter* writer, LiteNetLib::Utils::INetSerializable* packet) {
@@ -92,6 +101,8 @@ namespace MultiplayerCore::Networking {
 					}
 					getLogger().warning("REPORT TO ENDER: An Unknown exception was thrown processing custom packet '%s' from player '%s'", packetType.c_str(), user.c_str());
 				}
+				// An uncaught RunMethodException on Invoke will NOT bubble, and thus NOT be caught in the outer try-catch.
+				// You should consider adding a throw; to the catch(...) block or just removing the inner try-catch entirely.
 			}
 		}
 		catch (il2cpp_utils::RunMethodException const& e) {

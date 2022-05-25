@@ -11,6 +11,8 @@ namespace MultiplayerCore::Players {
 
     MpPlayerData* MpPlayerData::Init(StringW platformID, Platform platform)
     {
+        // Always worth noting that this is something that is a manually allocated instance and as such should be handled much more carefully.
+        // Your usage of this function is correct, though I still think it's worth noting somewhere, potentially with [[nodiscard]] and a comment.
         auto mpPlayerData = THROW_UNLESS(il2cpp_utils::New<MpPlayerData*, il2cpp_utils::CreationType::Manual>());
 
         mpPlayerData->platformId = platformID;

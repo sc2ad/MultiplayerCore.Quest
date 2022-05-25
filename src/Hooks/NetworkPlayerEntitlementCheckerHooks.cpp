@@ -71,6 +71,10 @@ namespace MultiplayerCore {
             }
             else {
                 auto task = Task_1<EntitlementsStatus>::New_ctor();
+                // Okay, so, as always with lambdas like this, it's important to know what you are capturing and the lifetimes.
+                // In this case, your first captures are task and levelId.
+                // levelId is an std::string, so that gets copied, no problems there.
+                // task is a pointer, so the value of the pointer gets copied, but if task gets gc'd, you will be sad.
                 BeatSaver::API::GetBeatmapByHashAsync(Utilities::GetHash(levelId),
                     [task, levelId](std::optional<BeatSaver::Beatmap> beatmaps) {
                         QuestUI::MainThreadScheduler::Schedule(
@@ -129,13 +133,17 @@ namespace MultiplayerCore {
     }
 
     MAKE_HOOK_MATCH(NetworkPlayerEntitlementChecker_Start, &NetworkPlayerEntitlementChecker::Start, void, NetworkPlayerEntitlementChecker* self) {
+        // The problem with doing this is that removing it is really really hard and that you are probably calling this way too often.
+        // Consider making a hook for when setIsEntitledToLevelEvent fires instead.
         self->dyn__rpcManager()->add_setIsEntitledToLevelEvent(
-        il2cpp_utils::MakeDelegate<System::Action_3<::StringW, ::StringW, EntitlementsStatus>*>(classof(System::Action_3<::StringW, ::StringW, EntitlementsStatus>*), (std::function<void(StringW, StringW, EntitlementsStatus)>) [&](StringW userId, StringW beatmapId, EntitlementsStatus status) {
-            HandleEntitlementReceived(userId, beatmapId, status);
-            }));
+            il2cpp_utils::MakeDelegate<System::Action_3<::StringW, ::StringW, EntitlementsStatus>*>(classof(System::Action_3<::StringW, ::StringW, EntitlementsStatus>*), &HandleEntitlementReceived)
+        );
         NetworkPlayerEntitlementChecker_Start(self);
     }
 
+    // And this is why I mentioned delegates being bad ;)
+    // In essence, this is something that should theoretically be fixed now, but it's not something I would suggest anyways.
+    // Consider reading my post: https://github.com/sc2ad/beatsaber-hook/wiki/Delegates-and-their-troubles
     // Causes crash when being called
     //MAKE_HOOK_MATCH(NetworkPlayerEntitlementChecker_OnDestroy, &NetworkPlayerEntitlementChecker::OnDestroy, void, NetworkPlayerEntitlementChecker* self) {
     //    if (entitlementAction)

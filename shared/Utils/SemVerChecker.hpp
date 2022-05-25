@@ -14,6 +14,9 @@ namespace MultiplayerCore::Utils {
 
     static bool MatchesVersion(std::string const& modName, std::string const& versionRange) {
         auto const modList = Modloader::getMods();
+        // Depending on when this is called, this call may not be necessary.
+        // Ex, it could be after load in which case it would already have been loaded/not.
+        // Or this function could be called a second time.
         auto modLoaded = Modloader::requireMod(modName);
         try {
             if (modLoaded) {

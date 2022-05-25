@@ -29,7 +29,7 @@ DECLARE_CLASS_CUSTOM_DLL(MultiplayerCore::Beatmaps, NetworkBeatmapLevel, Abstrac
 
 	// Getter overrides
 	DECLARE_INSTANCE_METHOD(StringW, get_levelHash);
-
+	// See? You even use the correct interface getters here, and NOT the metadatagetters for MpBeatmapLevel. Good, do this elsewhere!
 	DECLARE_OVERRIDE_METHOD(StringW, get_levelID, il2cpp_utils::il2cpp_type_check::MetadataGetter<&GlobalNamespace::IPreviewBeatmapLevel::get_levelID>::get());
 
 	DECLARE_OVERRIDE_METHOD(StringW, get_songName, il2cpp_utils::il2cpp_type_check::MetadataGetter<&GlobalNamespace::IPreviewBeatmapLevel::get_songName>::get());

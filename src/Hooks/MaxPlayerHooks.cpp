@@ -23,6 +23,8 @@ namespace MultiplayerCore {
         try {
             static auto* Enumerable_Take_Generic = THROW_UNLESS(il2cpp_utils::FindMethodUnsafe(classof(Enumerable*), "Take", 2));
             static auto* Enumerable_Take = THROW_UNLESS(il2cpp_utils::MakeGenericMethod(Enumerable_Take_Generic, { classof(MultiplayerPlayerResultsData*) }));
+            // You shouldn't call RunMethodThrow yourself unless you are POSITIVE you will never see an exception.
+            // I'd suggest RunMethodRethrow instead.
             auto* takeResult = il2cpp_utils::RunMethodThrow<IEnumerable_1<MultiplayerPlayerResultsData*>*, false>(static_cast<Il2CppClass*>(nullptr),
                 Enumerable_Take, reinterpret_cast<IEnumerable_1<MultiplayerPlayerResultsData*>*>(resultsData), 5);
 
@@ -35,6 +37,8 @@ namespace MultiplayerCore {
             //List<MultiplayerPlayerResultsData*>* newResultsData = Enumerable::ToList<MultiplayerPlayerResultsData*>(Enumerable::Take<MultiplayerPlayerResultsData*>(reinterpret_cast<IEnumerable_1<MultiplayerPlayerResultsData*>*>(resultsData), 5));
             MultiplayerResultsPyramidPatch(self, (IReadOnlyList_1<MultiplayerPlayerResultsData*>*)newResultsData, badgeStartTransform, badgeMidTransform);
         }
+        // This can (and should) be a RunMethodException, especially after you swap from RunMethodThrow to RunMethodRethrow.
+        // Otherwise, this literally won't catch anything, unless it's something bs-hook throws from the calls that aren't RunMethodThrow.
         catch (const std::runtime_error& e) {
             getLogger().critical("REPORT TO ENDER: Hook MultiplayerResultsPyramidPatch File " __FILE__ " at Line %d: %s", __LINE__, e.what());
             getLogger().debug("returning usual results pyramid");
@@ -57,16 +61,22 @@ namespace MultiplayerCore {
                 self->dyn__introPlayableDirector() = newPlayableGameObject->AddComponent<PlayableDirector*>();
 
                 using SetPlayableAsset = function_ptr_t<void, Il2CppObject*, PlayableAsset*>;
+                // See il2cpp_utils::resolve_icall :)
                 static SetPlayableAsset setPlayableAsset = reinterpret_cast<SetPlayableAsset>(il2cpp_functions::resolve_icall("UnityEngine.Playables.PlayableDirector::SetPlayableAsset"));
                 setPlayableAsset(self->dyn__introPlayableDirector(), realDirector->get_playableAsset());
 
                 // Mute duplicated animations except one (otherwise audio is very loud)
                 TimelineAsset* mutedTimeline = reinterpret_cast<TimelineAsset*>(self->dyn__introPlayableDirector()->get_playableAsset());
 
+                // Try not to cache the same methods in multiple places, it increases size of your mod and decreases performance for no real gain.
+                // Note that generic sharing will take place, so Enumerable_ToList being a MakeGenericMethod for even an Il2CppObject* will work for all reference types
+                // including TrackAsset* and MultiplayerResultsData*, for example.
+                // You should consider moving these Enumerable methods to another type/header file imo.
                 static auto* Enumerable_ToList_Generic = THROW_UNLESS(il2cpp_utils::FindMethodUnsafe(classof(Enumerable*), "ToList", 1));
                 static auto* Enumerable_ToList = THROW_UNLESS(il2cpp_utils::MakeGenericMethod(Enumerable_ToList_Generic, { classof(TrackAsset*) }));
 
                 //List<TrackAsset*>* outputTracks = Enumerable::ToList<TrackAsset*>(animationTimeline->GetOutputTracks());
+                // No RunMethodThrow
                 List<TrackAsset*>* outputTracks = il2cpp_utils::RunMethodThrow<List_1<TrackAsset*>*, false>(static_cast<Il2CppClass*>(nullptr),
                     Enumerable_ToList, mutedTimeline->GetOutputTracks());
 
@@ -85,6 +95,9 @@ namespace MultiplayerCore {
             if (targetIterations-1 != 0)
                 self->PlayIntroAnimation(maxDesiredIntroAnimationDuration, onCompleted);
         }
+        // Same issue with exceptions as mentioned above, except in this case there are more potential ways this exception could be thrown.
+        // You probably want to catch everything generically anyways, so it might be worth just letting it bubble up to the IL2CPP_CATCH_HANDLER that wraps this hook
+        // or writing your own catch handler.
         catch (const std::runtime_error& e) {
             // Reset director to real director
             self->dyn__introPlayableDirector() = realDirector;
@@ -115,9 +128,11 @@ namespace MultiplayerCore {
         getLogger().debug("Start: MultiplayerPlayersManager_get_allActiveAtGameStartPlayers");
         if (targetIterations == 0)
         {
+            // Probably not a debug log, then. Also should probably crash the game noticably or something or just be removed.
             getLogger().debug("THIS SHOULD NEVER RUN");
             targetIterations = floor((reinterpret_cast<IReadOnlyCollection_1<GlobalNamespace::IConnectedPlayer*>*>(self->dyn__allActiveAtGameStartPlayers())->get_Count() - 1) / 4) + 1;
         }
+        // Same argument for these.
         static auto* Enumerable_ToList_Generic = THROW_UNLESS(il2cpp_utils::FindMethodUnsafe(classof(Enumerable*), "ToList", 1));
         static auto* Enumerable_ToList = THROW_UNLESS(il2cpp_utils::MakeGenericMethod(Enumerable_ToList_Generic, { classof(IConnectedPlayer*) }));
 
@@ -145,6 +160,7 @@ namespace MultiplayerCore {
                 // Skip x amount of players and then take 4
                 static auto* Enumerable_Skip_Generic = THROW_UNLESS(il2cpp_utils::FindMethodUnsafe(classof(Enumerable*), "Skip", 2));
                 static auto* Enumerable_Skip = THROW_UNLESS(il2cpp_utils::MakeGenericMethod(Enumerable_Skip_Generic, { classof(IConnectedPlayer*) }));
+                // Same argument for RunMethodThrow
                 auto* skipResult = il2cpp_utils::RunMethodThrow<IEnumerable_1<IConnectedPlayer*>*, false>(static_cast<Il2CppClass*>(nullptr),
                     Enumerable_Skip, reinterpret_cast<IEnumerable_1<IConnectedPlayer*>*>(listActivePlayers), (targetIterations - 1) * 4);
 
@@ -168,6 +184,7 @@ namespace MultiplayerCore {
                 return reinterpret_cast<IReadOnlyList_1<IConnectedPlayer*>*>(selectedActivePlayers);
             }
             catch (const std::runtime_error& e) {
+                // Same argument for this.
                 getLogger().critical("REPORT TO ENDER: Hook MultiplayerPlayersManager_get_allActiveAtGameStartPlayers Exception: %s", e.what());
                 return self->dyn__allActiveAtGameStartPlayers();
             }
@@ -175,6 +192,8 @@ namespace MultiplayerCore {
         else if (cpispt == BindOutroTimeline) {
             cpispt = None;
             getLogger().debug("Getting outro active players(first 4 in list)");
+            // Please just ctrl-shift-f for RunMethodThrow and borderline swap all of them to be RunMethodRethrow.
+            // They should have the same syntax as far as you use them.
             auto* result = il2cpp_utils::RunMethodThrow<IEnumerable_1<IConnectedPlayer*>*, false>(static_cast<Il2CppClass*>(nullptr),
                 Enumerable_Take, reinterpret_cast<List_1<IConnectedPlayer*>*>(self->dyn__allActiveAtGameStartPlayers()), 4);
             
@@ -207,6 +226,7 @@ namespace MultiplayerCore {
             std::vector<float> resultVec(rangeVec.begin(), rangeVec.end());
             self->dyn__maxPlayersList()->dyn__values() = il2cpp_utils::vectorToArray(resultVec);
         } catch (const std::runtime_error& e) {
+            // Yada yada same exception stuff
             getLogger().critical("REPORT TO ENDER: Hook CreateServerFormController_Setup Exception: %s", e.what());
         }
         CreateServerFormController_Setup(self, selectedNumberOfPlayers, netDiscoverable);

@@ -21,6 +21,7 @@ DECLARE_CLASS_CUSTOM_DLL(MultiplayerCore::Players, MpPlayerData, MultiplayerCore
     // Player and platform information
     DECLARE_INSTANCE_FIELD(StringW, platformId);
 
+    // Please try to avoid using FindMethod for methods that YOU MAKE. In this particular case, it's actually okay, but in general, it adds completely irrelevant overhead.
     DECLARE_OVERRIDE_METHOD(void, Serialize, il2cpp_utils::FindMethodUnsafe(classof(MultiplayerCore::Networking::Abstractions::MpPacket*), "Serialize", 1), LiteNetLib::Utils::NetDataWriter* writer);
     DECLARE_OVERRIDE_METHOD(void, Deserialize, il2cpp_utils::FindMethodUnsafe(classof(MultiplayerCore::Networking::Abstractions::MpPacket*), "Deserialize", 1), LiteNetLib::Utils::NetDataReader* reader);
 

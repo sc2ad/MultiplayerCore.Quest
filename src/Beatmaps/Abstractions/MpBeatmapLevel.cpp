@@ -13,10 +13,17 @@
 
 #include <vector>
 
+// Y'know, I'm really not sure why you even have this type...
+// You could just as well have chosen a base type that _didn't_ implement the interface and thus would not need all of these odd no-op functions.
+// Plus, it's unclear if you really even need this type to begin with, you could have just used the interface for some of your comparisons
+// and because it's a pointer in your collections, be able to perfectly convert to whatever type you actually need.
+// Seems redundant.
 DEFINE_TYPE(MultiplayerCore::Beatmaps::Abstractions, MpBeatmapLevel);
 
 namespace MultiplayerCore::Beatmaps::Abstractions {
 
+	// Don't need a ctor for this type, don't bother declaring one.
+	// The only potential oddities that could arise from removing this would involve calling base constructors and how you may be doing that.
 	void MpBeatmapLevel::New() {}
 
 	System::Threading::Tasks::Task_1<UnityEngine::Sprite*>* MpBeatmapLevel::GetCoverImageAsync(System::Threading::CancellationToken cancellationToken) {
@@ -31,6 +38,11 @@ namespace MultiplayerCore::Beatmaps::Abstractions {
 
 
 	StringW MpBeatmapLevel::get_levelID() {
+		// Why? get_levelHash() will always be the same call and isn't virtual or overridable so this won't actually do anything different per instance.
+		// This function will just always crash/throw an exception because it will do:
+		// - Make a StringW that wraps a "custom_level_"
+		// - Add an empty (uninitialized) StringW to it (that holds the nullptr)
+		// - Will resolve to calling string + null
 		return StringW("custom_level_") + get_levelHash();
 	}
 

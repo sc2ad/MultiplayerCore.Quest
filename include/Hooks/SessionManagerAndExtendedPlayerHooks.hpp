@@ -4,6 +4,8 @@
 #include "Networking/MpPacketSerializer.hpp"
 #include "Networking/MpNetworkingEvents.hpp"
 
+// Also, what's up with many things being in the MultiplayerCore namespace and many things not?
+// Seems fairly odd to me... Pick one and stick with it so it's at least consistent so it's easier for others to understand please.
 extern MultiplayerCore::Players::MpPlayerData* localPlayer;
 extern std::unordered_map<std::string, MultiplayerCore::Players::MpPlayerData*> _playerData;
 

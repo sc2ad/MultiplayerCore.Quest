@@ -16,6 +16,11 @@ namespace MultiplayerCore::Beatmaps {
 
 	System::Threading::Tasks::Task_1<UnityEngine::Sprite*>* NetworkBeatmapLevel::GetCoverImageAsync(System::Threading::CancellationToken cancellationToken) {
 		if (!coverImageTask) {
+			// Few things about this:
+			// 1. The task is started when you construct it, you don't need to set the state accordingly.
+			// 2. If, while you are going to the beatsaver API to get the beatmap, 'this' no longer exists for some reason, you will crash painfully.
+			// Your coverImageTask should not be gc'd while your this instance is alive, so long as you create these instances in a conventional way
+			// ex: New, NewSpecific, New_ctor, ..., but IF YOUR INSTANCE DOES DIE, especially while being used in the nested async calls, you could have some pain.
 			coverImageTask = System::Threading::Tasks::Task_1<UnityEngine::Sprite*>::New_ctor(static_cast<UnityEngine::Sprite*>(nullptr));
 			reinterpret_cast<System::Threading::Tasks::Task*>(coverImageTask)->dyn_m_stateFlags() = System::Threading::Tasks::Task::TASK_STATE_STARTED;
 
@@ -26,6 +31,7 @@ namespace MultiplayerCore::Beatmaps {
 							QuestUI::MainThreadScheduler::Schedule([this, bytes] {
 								getLogger().debug("Got coverImage from BeatSaver");
 								coverImageTask->TrySetResult(QuestUI::BeatSaberUI::VectorToSprite(bytes));
+								// This is also not necessary, it does this in the TrySetResult call.
 								reinterpret_cast<System::Threading::Tasks::Task*>(coverImageTask)->dyn_m_stateFlags() = System::Threading::Tasks::Task::TASK_STATE_RAN_TO_COMPLETION;
 								}
 							);

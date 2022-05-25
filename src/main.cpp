@@ -69,6 +69,7 @@ namespace MultiplayerCore {
     }
 
     StringW getModdedStateStr() {
+        // yay! ConstStrings!
         static ConstString moddedStateStr("modded");
         return moddedStateStr;
     }
@@ -139,6 +140,8 @@ MAKE_HOOK_MATCH(LobbySetupViewController_DidActivate, &LobbySetupViewController:
             if (levelOpt.has_value()) {
                 std::string songPath = to_utf8(csstrtostr(levelOpt.value()->get_customLevelPath()));
                 getLogger().info("Deleting Song: %s", songPath.c_str());
+                // Always be careful whenever you use a lambda that captures by reference, since the lifetime of the reference(s) captured need to outlive the lambda.
+                // In this case, that should be the case, since it's DownloadedSongIds.
                 DeleteSong(songPath, [&] {
                     RefreshSongs(false);
                     DownloadedSongIds.pop_back();
@@ -147,6 +150,8 @@ MAKE_HOOK_MATCH(LobbySetupViewController_DidActivate, &LobbySetupViewController:
             }
         }
     }
+    // Please just have the Il2CPP_CATCH_HANDLER handle this for you... Remove this try-catch entirely because it's handled by the hook.
+    // Alternatively, to prevent a crash, you can wrap all of this in your own IL2CPP_CATCH_HANDLER and make the hook be ..._NO_CATCH
     catch (il2cpp_utils::RunMethodException const& e) {
         getLogger().error("REPORT TO ENDER RunMethodException in LobbySetupViewController_DidActivate: %s", e.what());
     }
@@ -255,16 +260,23 @@ MAKE_HOOK_MATCH(MultiplayerLevelLoader_LoadLevel, &MultiplayerLevelLoader::LoadL
             else {
                 isDownloading = true;
                 std::string hash = Utilities::GetHash(levelId);
+                // Be mindful of your lambdas, once again.
+                // This catpures self as a pointer, could be gc'd.
+                // gameplaySetupData as a pointer, could be gc'd.
+                // cslInstance, as a pointer, as a singleton so presumably not gc'd, soft restart could change that though.
+                // everything else okay.
                 BeatSaver::API::GetBeatmapByHashAsync(hash,
                     [self, gameplaySetupData, initialStartTime, hash, levelId, cslInstance](std::optional<BeatSaver::Beatmap> beatmapOpt) {
                         if (beatmapOpt.has_value()) {
                             auto beatmap = beatmapOpt.value();
                             auto beatmapName = beatmap.GetName();
                             getLogger().info("Downloading map: %s", beatmap.GetName().c_str());
+                            // Everything here okay the same way everything above is okay.
                             BeatSaver::API::DownloadBeatmapAsync(beatmap,
                                 [self, gameplaySetupData, initialStartTime, beatmapName, hash, levelId, beatmap, cslInstance](bool error) {
                                     if (error) {
                                         getLogger().info("Failed downloading map retrying: %s", beatmapName.c_str());
+                                        // Everything here okay the same way everything above is okay.
                                         BeatSaver::API::DownloadBeatmapAsync(beatmap,
                                             [self, gameplaySetupData, initialStartTime, beatmapName, hash, levelId](bool error) {
                                                 if (error) {
@@ -273,8 +285,10 @@ MAKE_HOOK_MATCH(MultiplayerLevelLoader_LoadLevel, &MultiplayerLevelLoader::LoadL
                                                 else {
                                                     getLogger().info("Downloaded map: %s", beatmapName.c_str());
                                                     DownloadedSongIds.emplace_back(hash);
+                                                    // ditto
                                                     QuestUI::MainThreadScheduler::Schedule(
                                                         [self, gameplaySetupData, initialStartTime, hash, levelId] {
+                                                            // ditto
                                                             RuntimeSongLoader::API::RefreshSongs(false,
                                                                 [self, gameplaySetupData, initialStartTime, hash, levelId](const std::vector<GlobalNamespace::CustomPreviewBeatmapLevel*>& songs) {
                                                                     auto* downloadedSongsGSM = MultiQuestensions::UI::DownloadedSongsGSM::get_Instance();
@@ -348,11 +362,15 @@ MAKE_HOOK_MATCH(MultiplayerLevelLoader_LoadLevel, &MultiplayerLevelLoader::LoadL
                 );
             }
         }
+        // Also, this needs to be said, but--
+        // what the HELL is going on up there, why do you nest like 6 lambdas
+        // Please for the love of all that is holy in this world consider doing something else or structuring it in a different way, it hurts.
         else {
             getLogger().debug("MultiplayerLevelLoader_LoadLevel, calling original as this is a base game beatmap");
             MultiplayerLevelLoader_LoadLevel(self, gameplaySetupData, initialStartTime);
         }
     }
+    // Remember to consider your own IL2CPP_CATCH_HANDLER or remove this try catch entirely and let the hook handle it.
     catch (il2cpp_utils::RunMethodException const& e) {
         getLogger().error("REPORT TO ENDER: %s", e.what());
     }
@@ -514,6 +532,7 @@ extern "C" void load() {
 
 #pragma region Debug Hooks
 
+    // #ifdef guard these then, so that you don't build them into everything
     INSTALL_HOOK(getLogger(), BGNetDebug_Log);
     INSTALL_HOOK(getLogger(), BGNetDebug_LogError);
     INSTALL_HOOK(getLogger(), BGNetDebug_LogException);

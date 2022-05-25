@@ -16,12 +16,14 @@ DECLARE_CLASS_CODEGEN(MultiplayerCore::UI, CenterScreenLoading, UnityEngine::Mon
     DECLARE_INSTANCE_METHOD(void, ShowDownloadingProgress, float downloadingProgress);
     //DECLARE_INSTANCE_METHOD(void, HideLoading);
     DECLARE_INSTANCE_METHOD(void, FixedUpdate);
+    // How many of these methods need to be marked as C# methods? Are they all looked up via reflection? Perhaps ShowLoading and ShowDownloadingProgress can be fixed.
 
     bool isDownloading;
 
     static CenterScreenLoading* instance;
 public:
     static int playersReady;
+    // This should also be inline, but it shouldn't matter
     static CenterScreenLoading* get_Instance() { return instance; }
     static void HideLoading();
     //static void UpdatePlayersReady(int playerReady);

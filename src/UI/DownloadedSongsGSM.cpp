@@ -76,6 +76,10 @@ namespace MultiQuestensions::UI {
             needSongRefresh = true;
             DownloadedSongIds.erase(DownloadedSongIds.begin() + selectedIdx);
         }
+        // Again, consider catching RunMethodException so you can actually get a backtrace.
+        // This will catch DeleteSong or RefreshSongs, as well as any issues with the SetIsEntitledToLevel call, as well as other calls, but it isn't as much info as you could have.
+        // Consider also letting this bubble up to the caller! Note that a RunMethodException will be implicitly caught here since it inherits std::exception, so it will not bubble.
+        // You could add a throw; to allow for bubbling.
         catch (const std::exception& e) {
             getLogger().critical("REPORT TO ENDER: Exception encountered trying to delete song: %s", e.what());
         }

@@ -79,6 +79,7 @@ bool Players::MpPlayerManager::TryGetMpPlayerData(std::string playerId, Players:
     return false;
 }
 
+// Avoid using std::string as a parameter, consider std::string const& in this case, or even std::string_view.
 Players::MpPlayerData* Players::MpPlayerManager::GetMpPlayerData(std::string playerId) {
     if (_playerData.find(playerId) != _playerData.end()) {
         return _playerData.at(playerId);
@@ -88,6 +89,7 @@ Players::MpPlayerData* Players::MpPlayerManager::GetMpPlayerData(std::string pla
 
 static void HandlePlayerData(Players::MpPlayerData* playerData, IConnectedPlayer* player) {
     if(player){
+        // honestly just get rid of to_utf8 and csstrtostr, just find replace all of those
         const std::string userId = to_utf8(csstrtostr(player->get_userId()));
         if (_playerData.contains(userId)) {
             getLogger().debug("HandlePlayerData, player already exists");
@@ -131,6 +133,9 @@ void HandlePlayerConnected(IConnectedPlayer* player) {
             getLogger().debug("MpPlayerData sent");
         }
     }
+    // If the exception is either:
+    // 1. caught in Send, it won't bubble up unless you do a throw;
+    // 2. thrown in Send, but is a RunMethodException/StackTraceException, you will get far more semantic information from them than just logging the .what() method. 
     catch (const std::runtime_error& e) {
         getLogger().error("REPORT TO ENDER: %s", e.what());
     }
@@ -147,6 +152,7 @@ void HandlePlayerDisconnected(IConnectedPlayer* player) {
             }
         }
     }
+    // Ditto
         catch (const std::runtime_error& e) {
         getLogger().error("REPORT TO ENDER: %s", e.what());
     }
@@ -202,6 +208,12 @@ Players::Platform getPlatform(UserInfo::Platform platform) {
         try {
             getLogger().debug("Platform: %s", MultiplayerCore::EnumUtils::GetEnumName(platform).c_str());
         }
+        // GetEnumName can only (realistically) throw std::bad_alloc and anything a C# method call could throw.
+        // As such, these catches aren't too helpful.
+        // Also, as general advice, if the stack trace info is in the exception, you can safely bubble the exception all the way up and handle it in a hook or CT method
+        // you don't need to have custom exception handling in EVERY method call.
+        // but, that only applies for things that throw a stack trace exception, so pure C++ exceptions would need to be caught in place.
+        // However, in this case, it would probably make far more sense to just move the catch logic into GetEnumName instead of having it weirdly here.
         catch (const std::runtime_error& e) {
             getLogger().error("REPORT TO ENDER: %s", e.what());
         }
@@ -227,6 +239,7 @@ MAKE_HOOK_MATCH(SessionManager_StartSession, &MultiplayerSessionManager::StartSe
     getLogger().debug("MultiplayerSessionManager.StartSession, creating localPlayer");
     static auto localNetworkPlayerModel = UnityEngine::Resources::FindObjectsOfTypeAll<LocalNetworkPlayerModel*>().get(0);
     static auto UserInfoTask = localNetworkPlayerModel->dyn__platformUserModel()->GetUserInfo();
+    // Once again, scary delegates. This can safely capture by reference since localPlayer is a static field.
     static auto action = il2cpp_utils::MakeDelegate<System::Action_1<System::Threading::Tasks::Task*>*>(classof(System::Action_1<System::Threading::Tasks::Task*>*), (std::function<void(System::Threading::Tasks::Task_1<GlobalNamespace::UserInfo*>*)>)[&](System::Threading::Tasks::Task_1<GlobalNamespace::UserInfo*>* userInfoTask) {
         auto userInfo = userInfoTask->get_Result();
         if (userInfo) {
@@ -239,9 +252,15 @@ MAKE_HOOK_MATCH(SessionManager_StartSession, &MultiplayerSessionManager::StartSe
         else getLogger().error("Failed to get local network player!");
         }
     );
-        if(action){
-    reinterpret_cast<System::Threading::Tasks::Task*>(UserInfoTask)->ContinueWith(action);
-    action = nullptr;
+    if(action){
+        reinterpret_cast<System::Threading::Tasks::Task*>(UserInfoTask)->ContinueWith(action);
+        action = nullptr;
+        // Woah, this is quite something.
+        // I really do hope this doesn't get called often, since action is a static local, so it will be assumed to persist, yet you have set it to null here.
+        // Just be very careful here, this has a lot of potential to cause issues. You could solve this by making action a local instead of a static local.
+        // Also, if you are POSITIVE that the delegate is truly dead at this point and that ContinueWith has happened, which is only the case after the returned action completes
+        // you can call: il2cpp_utils::ClearDelegate({reinterpret_cast<Il2CppDelegate*>(action)->method->method_ptr, true});
+        // Which will destroy the delegate without leaking any memory.
     }
 
 
@@ -269,6 +288,8 @@ MAKE_HOOK_MATCH(LobbyPlayersDataModel_HandleMenuRpcManagerGetRecommendedBeatmap,
     if (localPlayerData->get_beatmapLevel() && localPlayerData->get_beatmapLevel()->get_beatmapLevel()) {
         getLogger().debug("LobbyPlayersDataModel_HandleMenuRpcManagerGetRecommendedBeatmap Get LevelID");
         StringW levelId = localPlayerData->get_beatmapLevel()->get_beatmapLevel()->get_levelID();
+        // You could consider checking this yourself/writing a small helper method for this:
+        // if (levelId == nullptr || levelId->Length() == 0) or something similar
         if (Il2CppString::IsNullOrEmpty(levelId))
             return;
         StringW levelHash = Utilities::HashForLevelID(levelId);

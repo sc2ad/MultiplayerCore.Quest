@@ -1,4 +1,5 @@
 #pragma once
+// See BeatSaverBeatmapLevel.hpp, all of that applies here.
 #include "main.hpp"
 #include "Beatmaps/Abstractions/MpBeatmapLevel.hpp"
 #include "GlobalNamespace/IPreviewBeatmapLevel.hpp"

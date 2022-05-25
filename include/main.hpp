@@ -11,6 +11,7 @@
 #include "beatsaber-hook/shared/utils/il2cpp-utils.hpp"
 
 // Codegen includes
+// Please don't include this stuff here, especially because you include main.hpp all over.
 #include "LiteNetLib/Utils/INetSerializable.hpp"
 #include "GlobalNamespace/MultiplayerSessionManager.hpp"
 #include "GlobalNamespace/IMenuRpcManager.hpp"

@@ -42,6 +42,9 @@ DECLARE_CLASS_CODEGEN_INTERFACES_DLL(MultiplayerCore::Beatmaps::Abstractions, Mp
     DECLARE_OVERRIDE_METHOD(System::Threading::Tasks::Task_1<UnityEngine::Sprite*>*, GetCoverImageAsync, il2cpp_utils::il2cpp_type_check::MetadataGetter<&GlobalNamespace::IPreviewBeatmapLevel::GetCoverImageAsync>::get(), System::Threading::CancellationToken cancellationToken);
 )
 
+// I dislike the following very much: Why call FindMethod on methods that YOU ARE MAKING? You can simply just do klass->methods[idx] instead, and do that in order.
+// Also, it's unclear if you even really need this-- if your methods are truly virtual, you would, but they aren't, so you would simply resolve them by overriding the same interface method
+// as in, a custom type could inherit this type and simply specify some of the same overrides as above (verbatim) and it would work.
 #include "beatsaber-hook/shared/utils/il2cpp-utils-methods.hpp"
 template<>
 struct ::il2cpp_utils::il2cpp_type_check::MetadataGetter<static_cast<::StringW(MultiplayerCore::Beatmaps::Abstractions::MpBeatmapLevel::*)()>(&MultiplayerCore::Beatmaps::Abstractions::MpBeatmapLevel::get_levelHash)> {

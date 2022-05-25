@@ -62,6 +62,10 @@ namespace MultiplayerCore::Beatmaps::Providers {
         /// <param name="packet">The packet to get preview data from</param>
         /// <returns>An <see cref="GlobalNamespace::IPreviewBeatmapLevel*"/> with a cover from BeatSaver.</returns>
         IPreviewBeatmapLevel* MpBeatmapLevelProvider::GetBeatmapFromPacket(MultiplayerCore::Beatmaps::Packets::MpBeatmapPacket* packet) {
+            // Doing this means that you will be returning and using a dangling IPreviewBeatmapLevel*.
+            // It is POSSIBLE that your lack of references to the top-level type (the NetworkBeatmapLevel) will cause it to be gc'd
+            // which may also result in your IPreviewBeatmapLevel being gc'd, which means you will be left with a pointer to garbage.
+            // This might be a great place to return a SafePtr instead if you fear this may happen, or something similar.
             return NetworkBeatmapLevel::New_ctor(packet)->get_preview();
         }
         //= > new NetworkBeatmapLevel(packet, _beatsaver);

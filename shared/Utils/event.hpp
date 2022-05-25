@@ -1,4 +1,6 @@
 #pragma once
+// Hey, I remember talking about this type!
+// I still think it does many things weirdly and that may very well cause many issues, but if it works it works.
 #include <functional>
 #include <list>
 #include <algorithm>

@@ -20,6 +20,7 @@ namespace MultiplayerCore::Utils {
             }
             rapidjson::Document document;
             document.Parse(readfile(infodatPath));
+            // ACK! How about FindMember or like any kind of not impossible to understand nesting, that would be much preferred.
             if (!document.HasParseError() && document.IsObject() &&
                 document.HasMember("_difficultyBeatmapSets") && document["_difficultyBeatmapSets"].IsArray() && !document["_difficultyBeatmapSets"].Empty()) {
                 for (auto& dBS : document["_difficultyBeatmapSets"].GetArray())

@@ -11,6 +11,8 @@ DECLARE_CLASS_CODEGEN_INTERFACES_DLL(MultiplayerCore::Networking::Abstractions, 
     DECLARE_OVERRIDE_METHOD(void, Deserialize, il2cpp_utils::il2cpp_type_check::MetadataGetter<&LiteNetLib::Utils::INetSerializable::Deserialize>::get(), LiteNetLib::Utils::NetDataReader* reader);
 )
 
+// Ditto here, ESPECIALLY the class from name stuff.
+// Also note that you don't need to write out the whole static cast for methods that are not overloaded.
 #include "beatsaber-hook/shared/utils/il2cpp-utils-methods.hpp"
 template<>
 struct ::il2cpp_utils::il2cpp_type_check::MetadataGetter<static_cast<void (MultiplayerCore::Networking::Abstractions::MpPacket::*)(LiteNetLib::Utils::NetDataWriter*)>(&MultiplayerCore::Networking::Abstractions::MpPacket::Serialize)> {

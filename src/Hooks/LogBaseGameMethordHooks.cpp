@@ -4,6 +4,7 @@
 
 //Does not cause blackscreen crash
 
+// This file doesn't really seem useful now... Also not sure it needs to be an orig hook.
 using namespace GlobalNamespace;
 using namespace UnityEngine;
 

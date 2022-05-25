@@ -13,7 +13,8 @@ namespace MultiplayerCore {
 
         template<typename T>
         static std::string GetEnumName(T enumValue, bool ignoreCase) {
-        static_assert(std::is_convertible_v<T, int>);
+            // This is not actually always valid for enums. A "more correct" conversion to check for would be to `System::Enum`
+            static_assert(std::is_convertible_v<T, int>);
             std::string enumName = "";
             // int enumInt = static_cast<int>(enumValue);
             Il2CppClass* enumClass = classof(T);

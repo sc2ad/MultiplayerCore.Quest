@@ -27,6 +27,8 @@ namespace MultiplayerCore {
 		void Invoke(LiteNetLib::Utils::NetDataReader* reader, int size, GlobalNamespace::IConnectedPlayer* player) {
 			getLogger().debug("Running Invoke creating packet");
 			TPacket packet;
+			// Why not: packet = THROW_UNLESS(il2cpp_utils::New<TPacket, creationType>())?
+			// Also, consider using `il2cpp_utils::NewSpecific` instead of `New`, should be a nice optimization.
 			if constexpr (creationType == ::il2cpp_utils::CreationType::Temporary)
 				packet = THROW_UNLESS(il2cpp_utils::New<TPacket>());
 			else
@@ -35,12 +37,15 @@ namespace MultiplayerCore {
 			//getLogger().debug("Assigning from ThreadStaticPacketPool");
 			//packet = GlobalNamespace::ThreadStaticPacketPool_1<TPacket>::get_pool()->Obtain();
 			// TPacket packet = GlobalNamespace::ThreadStaticPacketPool_1<TPacket>::get_pool()->Obtain();
+			// If packet is null at this point, THROW_UNLESS would have already thrown. This is a dead condition.
 			if (packet == nullptr) {
 				reader->SkipBytes(size);
 			}
 			else {
 				try {
 					packet->Deserialize(reader);
+					// If this throws a conventional RunMethodException or a StackTraceException, .what() will not log the stack trace.
+					// It might be worth it to wrap this in an IL2CPP_CATCH_HANDLER() instead, or catch RunMethodException explicitly.
 				}
 				catch (const std::exception& e) {
 					getLogger().debug("Exception Deserializing Packet");
@@ -53,6 +58,7 @@ namespace MultiplayerCore {
 			if (action != nullptr) {
 				try {
 					action(packet, player);
+					// Ditto, though in this case, this is far more likely to be a C++ call, so perhaps less valuable.
 				}
 				catch (const std::exception& e) {
 					getLogger().error("Exception running action");
@@ -62,6 +68,8 @@ namespace MultiplayerCore {
 					getLogger().debug("REPORT TO ENDER: Unknown exception Deserializing Packet");
 				}
 			}
+			// At the end of this scope, if packet was created manually, you will leak memory! Make sure you deallocate it!
+			// Use: gc_free_specific(packet) assuming it is a pointer AND it was manually allocated.
 		}
 	};
 }
